@@ -2,11 +2,17 @@
 
 This is a release procedure, not evidence that a new version has been published.
 
-Ordinary commits and merges into `main` do not publish updates. Accumulate
-maintenance changes, then prepare one release when requested. A pushed `v*` tag
-starts packaging and automatic publication after verification; it is a publication
-action. Manual dispatch of an existing tag can also publish. Neither route waits
-for an additional human approval inside the workflow. Follow the
+Ordinary commits and merges into `main` do not publish the stable three-platform
+update. A successful macOS arm64 package build on `main` publishes
+`agy-switch-<version>-macos-arm64.zip` under the commit tag `macos-arm64-<sha>`.
+For 4.9.1 and later that zip contains `AntiGravity Switch.app`, the same archive
+layout as the stable macOS asset. The manual macOS arm64 release workflow
+publishes the same archive under `macos-arm64-release-<sha>`.
+Neither tag is a `v*` version, and neither one signs, notarizes, or replaces the
+stable updater feed. A pushed `v*` tag starts packaging and automatic publication
+of the complete three-platform set after verification; it is a publication
+action. Manual dispatch of an existing tag can also publish. Neither stable
+route waits for an additional human approval inside the workflow. Follow the
 [maintenance guide](maintenance-guide.md) before triggering either route.
 
 Each version must have reviewed acceptance notes in `docs/release-notes/VERSION.md` before tagging. The publisher includes them when creating the draft and reads back the exact body before any asset upload, immediately before publication, and after publication. A resumed draft with missing or changed notes fails without becoming public; review its body before resuming. Keep passed, blocked and untested native behavior distinct from package/CLI checks. Never publish first and add these limits afterward.

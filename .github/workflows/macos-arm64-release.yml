@@ -1,7 +1,8 @@
 name: macOS arm64 release
 
-# Builds only the Apple Silicon release bundle from the selected branch.
-# It does not build Windows or Linux, create a tag, or publish a release.
+# Builds only the Apple Silicon release bundle from the selected branch and
+# publishes that archive on a commit-scoped GitHub release. It does not build
+# Windows or Linux, and it does not publish a stable three-platform v* release.
 on:
   workflow_dispatch:
 
@@ -48,33 +49,7 @@ jobs:
       - name: Verify and stage the arm64 release bundle
         env:
           VERSION: ${{ steps.source.outputs.version }}
-        run: |
-          set -euo pipefail
-          APP_DIR="src-tauri/target/aarch64-apple-darwin/release/bundle/macos"
-          APP_NAME="$(node --input-type=module -e 'import {desktopBrand} from "./scripts/release-brand.mjs"; console.log(desktopBrand(process.env.VERSION).app)')"
-          if [[ "$APP_NAME" != "agy-switch" ]]; then
-            mv "$APP_DIR/agy-switch.app" "$APP_DIR/$APP_NAME.app"
-          fi
-          APP="$APP_DIR/$APP_NAME.app"
-          EXECUTABLE="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist")"
-          [[ "$EXECUTABLE" == "agy-switch-desktop" ]]
-          [[ -x "$APP/Contents/MacOS/$EXECUTABLE" ]]
-          [[ "$(lipo -archs "$APP/Contents/MacOS/agy-switch-desktop")" == "arm64" ]]
-          node scripts/verify-macos-bundle.mjs "$APP" "$VERSION"
-          [[ "$("$APP/Contents/MacOS/agy-switch-desktop" --version)" == "agy-switch $VERSION" ]]
-          node scripts/test-cli.mjs "$APP/Contents/MacOS/agy-switch-desktop"
-          mkdir -p artifacts/release
-          NAME="agy-switch-${VERSION}-macos-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent "$APP" "artifacts/release/$NAME"
-          ROUNDTRIP="$(mktemp -d "$RUNNER_TEMP/agy-macos-archive.XXXXXX")"
-          ditto -x -k "artifacts/release/$NAME" "$ROUNDTRIP"
-          node scripts/verify-macos-bundle.mjs "$ROUNDTRIP/$APP_NAME.app" "$VERSION"
-          UPDATE_STAGE="$(mktemp -d "$RUNNER_TEMP/agy-macos-update.XXXXXX")"
-          ditto "$APP" "$UPDATE_STAGE/agy-switch.app"
-          node scripts/verify-macos-bundle.mjs "$UPDATE_STAGE/agy-switch.app" "$VERSION"
-          tar -czf "artifacts/release/agy-switch-${VERSION}-macos-arm64.app.tar.gz" -C "$UPDATE_STAGE" agy-switch.app
-          node scripts/release-assets.mjs checksum "artifacts/release/$NAME"
-          node --input-type=module -e 'import { writeFileSync } from "node:fs"; writeFileSync("artifacts/release/build-info.json", JSON.stringify({ source_commit: process.env.GITHUB_SHA, version: process.env.VERSION, architecture: "arm64", profile: "release", published: false }, null, 2) + "\n");'
+        run: bash scripts/stage-macos-release.sh src-tauri/target/aarch64-apple-darwin/release/bundle/macos "$VERSION" artifacts/release
       - uses: actions/upload-artifact@v4
         with:
           name: macos-arm64-release-${{ github.sha }}
@@ -82,3 +57,27 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+
+  publish:
+    name: Publish macOS arm64 package
+    needs: macos
+    if: needs.macos.result == 'success'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-release-${{ github.sha }}
+          path: artifacts/macos-release
+      - name: Publish the macOS package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-macos-build.mjs artifacts/macos-release "macos-arm64-release-${{ github.sha }}" "${{ github.sha }}" "$GITHUB_REPOSITORY"

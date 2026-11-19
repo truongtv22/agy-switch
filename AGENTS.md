@@ -68,8 +68,10 @@ macOS native menu, Windows/Linux tray dashboard and a terminal interface.
 
 ## Development is separate from publication
 
-- Ordinary commits, PR merges and CI artifacts do not publish user updates.
-  Accumulate maintenance changes on `main`; prepare a release when requested.
+- Ordinary commits and PR merges do not publish the stable three-platform update.
+  A successful macOS arm64 package build on `main` publishes that Mac archive as
+  its own commit-scoped release. Stable updates still require an explicit `v*` tag
+  or a full Release dispatch.
 - Version bumps belong to release preparation. Keep all six version fields aligned
   and follow the [release checklist](docs/maintainers/release-checklist.md).
 - **Pushing a `v*` tag can publish a stable release automatically.** Tag pushes and

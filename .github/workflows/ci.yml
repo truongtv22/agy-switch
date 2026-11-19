@@ -88,7 +88,7 @@ jobs:
         run: node scripts/test-desktop-settings.mjs && node scripts/test-account-transfer.mjs
 
       - name: Test Homebrew cask generation and release assets
-        run: node --test scripts/test-homebrew-generator.mjs scripts/test-release.mjs scripts/test-update-assets.mjs
+        run: node --test scripts/test-homebrew-generator.mjs scripts/test-release.mjs scripts/test-update-assets.mjs scripts/test-publish-macos-build.mjs
 
   # The mocked-IPC browser suite is the longest single test, so it is spread over three machines.
   ui-mock:
@@ -399,7 +399,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
         with:
@@ -462,26 +462,50 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Package macOS arm64 test app
+      - name: Package macOS arm64 release app
+        env:
+          # Complete bundle sealing; not Developer ID signing or notarization.
+          APPLE_SIGNING_IDENTITY: "-"
         run: |
           set -euo pipefail
-          npm run tauri bundle -- --debug --bundles app
-          APP="src-tauri/target/debug/bundle/macos/agy-switch.app"
-          [[ "$(lipo -archs "$APP/Contents/MacOS/agy-switch-desktop")" == "arm64" ]]
-          node scripts/test-cli.mjs "$APP/Contents/MacOS/agy-switch-desktop"
-          mkdir -p artifacts/macos-test
-          ARCHIVE="artifacts/macos-test/agy-switch-test-${SOURCE_HEAD}-macos-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent "$APP" "$ARCHIVE"
-          shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
-          node --input-type=module -e 'import { writeFileSync } from "node:fs"; import { execFileSync } from "node:child_process"; writeFileSync("artifacts/macos-test/build-info.json", JSON.stringify({ source_head: process.env.SOURCE_HEAD, checkout_commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(), run_id: process.env.GITHUB_RUN_ID, architecture: "arm64", profile: "debug", distribution: "CI test build; not a signed or notarized release" }, null, 2) + "\n");'
+          npm run tauri build -- --target aarch64-apple-darwin --bundles app -- --locked
+          VERSION="$(node -p "require('./package.json').version")"
+          bash scripts/stage-macos-release.sh \
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos \
+            "$VERSION" \
+            artifacts/macos-test
 
-      - name: Upload macOS test app
+      - name: Upload macOS release app
         uses: actions/upload-artifact@v4
         with:
           name: macos-arm64-test-${{ env.SOURCE_HEAD }}
           path: artifacts/macos-test/
           if-no-files-found: error
           retention-days: 7
+
+  publish-macos:
+    name: Publish macOS arm64 package
+    needs: macos
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.macos.result == 'success'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-test-${{ github.sha }}
+          path: artifacts/macos-test
+      - name: Publish the macOS package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-macos-build.mjs artifacts/macos-test "macos-arm64-${{ github.sha }}" "${{ github.sha }}" "$GITHUB_REPOSITORY"
 
   # Stable required-check names. Branch protection requires "<platform> build"; these always
   # report (success when everything passed or a documentation-only PR skipped the real jobs)
