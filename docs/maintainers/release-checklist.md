@@ -3,9 +3,11 @@
 This is a release procedure, not evidence that a new version has been published.
 
 Ordinary commits and merges into `main` do not publish the stable three-platform
-update. A successful macOS arm64 package build on `main` publishes that Mac
-archive under the commit tag `macos-arm64-<sha>`. The manual macOS arm64 release
-workflow publishes its release-profile archive under `macos-arm64-release-<sha>`.
+update. A successful macOS arm64 package build on `main` publishes
+`agy-switch-<version>-macos-arm64.zip` under the commit tag `macos-arm64-<sha>`.
+For 4.9.1 and later that zip contains `AntiGravity Switch.app`, the same archive
+layout as the stable macOS asset. The manual macOS arm64 release workflow
+publishes the same archive under `macos-arm64-release-<sha>`.
 Neither tag is a `v*` version, and neither one signs, notarizes, or replaces the
 stable updater feed. A pushed `v*` tag starts packaging and automatic publication
 of the complete three-platform set after verification; it is a publication

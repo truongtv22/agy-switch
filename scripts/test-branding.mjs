@@ -38,6 +38,14 @@ test('new desktop packages and signed updater formats use the same brand', () =>
   assert.equal(updatePackages('4.8.1')['darwin-aarch64'], 'Antigravity-Tools-Lite-4.8.1-macos-arm64.app.tar.gz');
   assert.throws(() => desktopBrand('4.9.0/path'));
   assert.deepEqual(desktopBrand('4.9.1'), { prefix: 'agy-switch', app: 'AntiGravity Switch', executable: 'agy-switch-desktop' });
+  const current = json('package.json').version;
+  assert.equal(desktopBrand(current).app, 'AntiGravity Switch');
+  const stage = read('scripts/stage-macos-release.sh').toString();
+  assert.match(stage, /agy-switch-\$\{VERSION\}-macos-arm64\.zip/);
+  assert.match(stage, /\$APP_NAME\.app/);
+  const ci = read('.github/workflows/ci.yml').toString();
+  assert.match(ci, /stage-macos-release\.sh/);
+  assert.doesNotMatch(ci, /tauri bundle -- --debug/);
 });
 test('frontend and OS icons have the expected formats, dimensions and matching source', () => {
   const png = (file, size) => {
