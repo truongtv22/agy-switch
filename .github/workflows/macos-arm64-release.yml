@@ -1,7 +1,8 @@
 name: macOS arm64 release
 
-# Builds only the Apple Silicon release bundle from the selected branch.
-# It does not build Windows or Linux, create a tag, or publish a release.
+# Builds only the Apple Silicon release bundle from the selected branch and
+# publishes that archive on a commit-scoped GitHub release. It does not build
+# Windows or Linux, and it does not publish a stable three-platform v* release.
 on:
   workflow_dispatch:
 
@@ -82,3 +83,27 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
+
+  publish:
+    name: Publish macOS arm64 package
+    needs: macos
+    if: needs.macos.result == 'success'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-release-${{ github.sha }}
+          path: artifacts/macos-release
+      - name: Publish the macOS package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-macos-build.mjs artifacts/macos-release "macos-arm64-release-${{ github.sha }}" "${{ github.sha }}" "$GITHUB_REPOSITORY"
