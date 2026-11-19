@@ -33,6 +33,7 @@ interface AccountGridProps {
     onSwitch: (accountId: string, targetIde?: string) => void;
     onRefresh: (accountId: string) => void;
     onEditLabel: (accountId: string) => void;
+    onToggleDisabled: (accountId: string) => void;
     onDelete: (accountId: string) => void;
     onExport?: (accountId: string) => void;
     onViewCycleHistory?: (accountId: string) => void;
@@ -51,6 +52,7 @@ interface SortableAccountCardProps {
     onSwitch: (targetIde?: string) => void;
     onRefresh: () => void;
     onEditLabel: () => void;
+    onToggleDisabled: () => void;
     onDelete: () => void;
     onExport?: () => void;
     onViewCycleHistory?: () => void;
@@ -68,6 +70,7 @@ function SortableAccountCard({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -102,6 +105,7 @@ function SortableAccountCard({
                 onSwitch={onSwitch}
                 onRefresh={onRefresh}
                 onEditLabel={onEditLabel}
+                onToggleDisabled={onToggleDisabled}
                 onDelete={onDelete}
                 onExport={onExport}
                 onViewCycleHistory={onViewCycleHistory}
@@ -124,6 +128,7 @@ function AccountGrid({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -194,6 +199,7 @@ function AccountGrid({
                             onSwitch={(targetIde?: string) => onSwitch(account.id, targetIde)}
                             onRefresh={() => onRefresh(account.id)}
                             onEditLabel={() => onEditLabel(account.id)}
+                            onToggleDisabled={() => onToggleDisabled(account.id)}
                             onDelete={() => onDelete(account.id)}
                             onExport={() => onExport?.(account.id)}
                             onViewCycleHistory={() => onViewCycleHistory?.(account.id)}
@@ -218,6 +224,7 @@ function AccountGrid({
                             onSwitch={() => {}}
                             onRefresh={() => {}}
                             onEditLabel={() => {}}
+                            onToggleDisabled={() => {}}
                             onDelete={() => {}}
                             quotaWindow={quotaWindow}
                             valuations={valuationsMap?.[activeAccount.id]}

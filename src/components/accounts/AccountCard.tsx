@@ -23,6 +23,7 @@ interface AccountCardProps {
     onSwitch: (targetIde?: string) => void;
     onRefresh: () => void;
     onEditLabel: () => void;
+    onToggleDisabled: () => void;
     onDelete: () => void;
     onExport?: () => void;
     onViewCycleHistory?: () => void;
@@ -45,6 +46,7 @@ function AccountCard({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -339,6 +341,20 @@ function AccountCard({
                         aria-label={`${t('accounts.edit_remark', '编辑备注')} ${account.email}`}
                     >
                         <Tag className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                        className={cn(
+                            "p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent",
+                            isDisabled
+                                ? "text-rose-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-rose-400 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                : "text-gray-400 hover:text-rose-600 hover:bg-rose-50 dark:text-gray-500 dark:hover:text-rose-400 dark:hover:bg-rose-900/30"
+                        )}
+                        onClick={(e) => { e.stopPropagation(); onToggleDisabled(); }}
+                        disabled={isRefreshing || isSwitching}
+                        title={isDisabled ? t('accounts.enable_account') : t('accounts.disable_account')}
+                        aria-label={`${isDisabled ? t('accounts.enable_account') : t('accounts.disable_account')} ${account.email}`}
+                    >
+                        {isDisabled ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
                     </button>
                     <button
                         className="p-1.5 rounded-lg transition-all text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"

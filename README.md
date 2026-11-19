@@ -118,6 +118,7 @@ From 4.10.1, **Settings → Experimental Features** offers **Chinese interface**
 | Compare five-hour and weekly quotas | Accounts; choose the quota window and list or card view |
 | Estimate what a quota is worth | Accounts; enable quota value in Settings to see consumed and remaining value in USD/CNY with token equivalents ([details](docs/quota-valuation.md)) |
 | Set account remarks or change account order | Accounts; edit a remark or drag an account into position |
+| Disable an account for now | Accounts; use Disable this account. Enable this account restores switching and refresh |
 | Export or restore accounts | Accounts; use the trailing Export action for one account or a selection, then restore JSON through Add account ([details](docs/account-scopes.md)) |
 | Retry an unknown account plan | Accounts > Unknown; refresh quota to retry plan detection |
 | Configure a network proxy | Settings > General Preferences > Network proxy; follows system settings by default, changes apply automatically ([routing](docs/account-scopes.md#network-routing)) |

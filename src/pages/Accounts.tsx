@@ -52,6 +52,7 @@ function Accounts() {
     refreshQuota,
     reorderAccounts,
     updateAccountLabel,
+    setAccountDisabled,
   } = useAccountStore();
   const [valuationsMap, setValuationsMap] = useState<Record<string, BucketValuation[]>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,6 +322,24 @@ function Accounts() {
   const handleDelete = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId);
     if (account) setAccountToDelete(account);
+  };
+
+  const statusLock = useRef(new Set<string>());
+
+  const handleToggleDisabled = async (accountId: string) => {
+    if (statusLock.current.has(accountId)) return;
+    const account = accounts.find((item) => item.id === accountId);
+    if (!account) return;
+    const nextDisabled = !account.disabled;
+    statusLock.current.add(accountId);
+    try {
+      await setAccountDisabled(accountId, nextDisabled);
+      showToast(t(nextDisabled ? "accounts.account_disabled_notice" : "accounts.account_enabled_notice"), "success");
+    } catch (error) {
+      showToast(`${t("common.error")}: ${error}`, "error");
+    } finally {
+      statusLock.current.delete(accountId);
+    }
   };
 
   const handleEditLabel = (accountId: string) => {
@@ -765,6 +784,7 @@ function Accounts() {
                 onSwitch={handleSwitch}
                 onRefresh={handleRefresh}
                 onEditLabel={handleEditLabel}
+                onToggleDisabled={handleToggleDisabled}
                 onDelete={handleDelete}
                 onExport={id => handleExport([id])}
                 onViewCycleHistory={id => {
@@ -789,6 +809,7 @@ function Accounts() {
               onSwitch={handleSwitch}
               onRefresh={handleRefresh}
               onEditLabel={handleEditLabel}
+              onToggleDisabled={handleToggleDisabled}
               onDelete={handleDelete}
               onExport={id => handleExport([id])}
               onViewCycleHistory={id => {

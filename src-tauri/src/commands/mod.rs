@@ -660,6 +660,16 @@ pub async fn update_account_label(account_id: String, label: String) -> Result<(
     Ok(())
 }
 
+/// Enable or disable a saved account from the Accounts page.
+#[tauri::command]
+pub async fn set_account_disabled(account_id: String, disabled: bool) -> Result<(), String> {
+    modules::logger::log_info(&format!(
+        "Set account disabled: {} -> {}",
+        account_id, disabled
+    ));
+    modules::account::set_account_disabled(&account_id, disabled)
+}
+
 /// 读取 Antigravity 原生对话数据库中的本地 Token 用量
 #[tauri::command]
 pub async fn get_local_token_usage(

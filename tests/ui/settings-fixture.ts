@@ -14,7 +14,7 @@ export function setupSettingsFixture(options: { theme?: string; language?: strin
         desktop: { launch_at_login: false, hide_dock_icon: false, start_minimized: false }, menu_bar: { quota_scope: options.quotaScope || 'all' },
         network: { proxy_mode: 'system', proxy_url: '' },
         quota_protection: { enabled: false, threshold_percentage: 10, monitored_models: [] }, pinned_quota_models: { models: [] } };
-    const accounts = ['primary', 'backup', 'studio', 'personal'].map((name, index) => ({ id: `fixture-${index}`, email: `${name}@example.invalid`, created_at: 1, last_used: 1,
+    const accounts = ['primary', 'backup', 'studio', 'personal'].map((name, index) => ({ id: `fixture-${index}`, email: `${name}@example.invalid`, disabled: false as boolean, disabled_reason: undefined as string | undefined, disabled_at: undefined as number | undefined, created_at: 1, last_used: 1,
         token: { access_token: '', refresh_token: '', expires_in: 0, expiry_timestamp: 0, token_type: 'Bearer' },
         quota: { models: [{ name: 'gemini-test', display_name: 'Gemini test model', percentage: 80, reset_time: '2027-01-01T00:00:00Z' }], last_updated: 1800000000 } }));
     let lowQuota = { enabled: false, mode: 'wait', reserve_percentage: 10, candidate_min_percentage: 30, monitored_model: '', candidate_account_ids: [], target: 'app' };
@@ -76,6 +76,14 @@ export function setupSettingsFixture(options: { theme?: string; language?: strin
             }
             if (command === 'get_auto_switch_status') return copy(status);
             if (command === 'list_accounts') return copy(accounts);
+            if (command === 'set_account_disabled') {
+                const account = accounts.find(item => item.id === args.accountId);
+                if (!account) throw 'Account ID not found';
+                account.disabled = Boolean(args.disabled);
+                account.disabled_reason = account.disabled ? 'Manually disabled' : undefined;
+                account.disabled_at = account.disabled ? 1 : undefined;
+                return null;
+            }
             if (command === 'get_current_account') return copy(accounts[0]);
             if (command === 'get_account_dashboard_snapshot') return {
                 indexed_total: accounts.length, loaded_count: accounts.length, failed_count: 0,

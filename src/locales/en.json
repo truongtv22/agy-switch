@@ -190,7 +190,11 @@
     "current": "Current",
     "current_active": "Selected",
     "disabled": "Disabled",
-    "disabled_tooltip": "Account disabled: sign-in expired or revoked. Sign in again to restore it.",
+    "disabled_tooltip": "This account is disabled. Enable it to switch or refresh, or sign in again if authorization was revoked.",
+    "disable_account": "Disable this account",
+    "enable_account": "Enable this account",
+    "account_disabled_notice": "Account disabled",
+    "account_enabled_notice": "Account enabled",
     "forbidden": "403",
     "forbidden_msg": "Forbidden, skip auto-refresh",
     "status": {
