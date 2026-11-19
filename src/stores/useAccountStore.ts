@@ -28,6 +28,7 @@ interface AccountState {
     importFromCustomDb: (path: string) => Promise<accountService.AccountFileImportReport>;
     syncAccountFromDb: () => Promise<void>;
     updateAccountLabel: (accountId: string, label: string) => Promise<void>;
+    setAccountDisabled: (accountId: string, disabled: boolean) => Promise<void>;
 }
 
 export const useAccountStore = create<AccountState>((set, get) => ({
@@ -267,5 +268,27 @@ export const useAccountStore = create<AccountState>((set, get) => ({
             console.error('[AccountStore] Update label failed:', error);
             throw error;
         }
+    },
+
+    setAccountDisabled: async (accountId: string, disabled: boolean) => {
+        await accountService.setAccountDisabled(accountId, disabled);
+        set(state => ({
+            accounts: state.accounts.map(account => account.id === accountId
+                ? {
+                    ...account,
+                    disabled,
+                    disabled_reason: disabled ? 'Manually disabled' : undefined,
+                    disabled_at: disabled ? Math.floor(Date.now() / 1000) : undefined,
+                }
+                : account),
+            currentAccount: state.currentAccount?.id === accountId
+                ? {
+                    ...state.currentAccount,
+                    disabled,
+                    disabled_reason: disabled ? 'Manually disabled' : undefined,
+                    disabled_at: disabled ? Math.floor(Date.now() / 1000) : undefined,
+                }
+                : state.currentAccount,
+        }));
     },
 }));

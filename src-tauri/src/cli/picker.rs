@@ -1611,16 +1611,8 @@ fn show_accounts_and_quotas_hub(root: &Path, lang: Lang) {
             }
             HubAction::ToggleStatus(idx) => {
                 let target_acc = &snapshot.accounts[idx];
-                if let Ok(mut acc) = crate::modules::account::load_account(&target_acc.id) {
-                    acc.disabled = !acc.disabled;
-                    if acc.disabled {
-                        acc.disabled_at = Some(chrono::Utc::now().timestamp());
-                        acc.disabled_reason = Some("Manually disabled via CLI".to_string());
-                    } else {
-                        acc.disabled_at = None;
-                        acc.disabled_reason = None;
-                    }
-                    let _ = crate::modules::account::save_account(&acc);
+                let next_disabled = !target_acc.disabled;
+                if crate::modules::account::set_account_disabled(&target_acc.id, next_disabled).is_ok() {
                     if let Ok(reloaded) = Snapshot::read(root) {
                         snapshot = reloaded;
                     }

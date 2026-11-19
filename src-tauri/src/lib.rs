@@ -339,6 +339,7 @@ pub fn run() {
             modules::desktop::open_project_page,
             commands::set_window_theme,
             commands::update_account_label,
+            commands::set_account_disabled,
             commands::get_local_token_usage,
             commands::get_menu_bar_usage,
             commands::get_api_pricing,

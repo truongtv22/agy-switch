@@ -73,6 +73,7 @@ interface AccountTableProps {
     onSwitch: (accountId: string, targetIde?: string) => void;
     onRefresh: (accountId: string) => void;
     onEditLabel: (accountId: string) => void;
+    onToggleDisabled: (accountId: string) => void;
     onDelete: (accountId: string) => void;
     onExport?: (accountId: string) => void;
     onViewCycleHistory?: (accountId: string) => void;
@@ -93,6 +94,7 @@ interface SortableRowProps {
     onSwitch: (targetIde?: string) => void;
     onRefresh: () => void;
     onEditLabel: () => void;
+    onToggleDisabled: () => void;
     onDelete: () => void;
     onExport?: () => void;
     onViewCycleHistory?: () => void;
@@ -110,6 +112,7 @@ interface AccountRowContentProps {
     onSwitch: (targetIde?: string) => void;
     onRefresh: () => void;
     onEditLabel: () => void;
+    onToggleDisabled: () => void;
     onDelete: () => void;
     onExport?: () => void;
     onViewCycleHistory?: () => void;
@@ -203,6 +206,7 @@ function SortableAccountRow({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -279,6 +283,7 @@ function SortableAccountRow({
                 onSwitch={onSwitch}
                 onRefresh={onRefresh}
                 onEditLabel={onEditLabel}
+                onToggleDisabled={onToggleDisabled}
                 onDelete={onDelete}
                 onExport={onExport}
                 onViewCycleHistory={onViewCycleHistory}
@@ -302,6 +307,7 @@ function AccountRowContent({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -546,7 +552,7 @@ function AccountRowContent({
                     ? "bg-[#dbeafe] dark:bg-[#15243e] group-hover:bg-[#bfdbfe] dark:group-hover:bg-[#1e345b]"
                     : "bg-white dark:bg-base-100 group-hover:bg-gray-50 dark:group-hover:bg-base-200"
             )}>
-                <div className="flex items-center justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity max-w-[188px] mx-auto">
+                <div className="flex items-center justify-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity max-w-[220px] mx-auto">
                     <button
                         className={cn(
                             "p-1.5 rounded-lg transition-all text-gray-500 dark:text-gray-400",
@@ -581,6 +587,20 @@ function AccountRowContent({
                         disabled={isRefreshing || isSwitching}
                     >
                         <Tag className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                        className={cn(
+                            "p-1.5 rounded-lg transition-all disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-500",
+                            isDisabled
+                                ? "text-rose-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-rose-400 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/30"
+                                : "text-gray-500 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                        )}
+                        onClick={(e) => { e.stopPropagation(); onToggleDisabled(); }}
+                        title={isDisabled ? t('accounts.enable_account') : t('accounts.disable_account')}
+                        aria-label={`${isDisabled ? t('accounts.enable_account') : t('accounts.disable_account')} ${account.email}`}
+                        disabled={isRefreshing || isSwitching}
+                    >
+                        {isDisabled ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
                     </button>
                     <button
                         className="p-1.5 text-gray-500 dark:text-gray-400 rounded-lg transition-all hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-500"
@@ -636,6 +656,7 @@ function AccountTable({
     onSwitch,
     onRefresh,
     onEditLabel,
+    onToggleDisabled,
     onDelete,
     onExport,
     onViewCycleHistory,
@@ -817,6 +838,7 @@ function AccountTable({
                                     onSwitch={(targetIde?: string) => onSwitch(account.id, targetIde)}
                                     onRefresh={() => onRefresh(account.id)}
                                     onEditLabel={() => onEditLabel(account.id)}
+                                    onToggleDisabled={() => onToggleDisabled(account.id)}
                                     onDelete={() => onDelete(account.id)}
                                     onExport={() => onExport?.(account.id)}
                                     onViewCycleHistory={() => onViewCycleHistory?.(account.id)}
@@ -864,6 +886,7 @@ function AccountTable({
                                         onSwitch={() => { }}
                                         onRefresh={() => { }}
                                         onEditLabel={() => { }}
+                                        onToggleDisabled={() => { }}
                                         onDelete={() => { }}
                                         isDisabled={Boolean(activeAccount.disabled)}
                                         quotaWindow={quotaWindow}

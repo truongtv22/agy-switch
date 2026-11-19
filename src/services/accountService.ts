@@ -174,6 +174,10 @@ export async function updateAccountLabel(accountId: string, label: string): Prom
     return await invoke('update_account_label', { accountId, label });
 }
 
+export async function setAccountDisabled(accountId: string, disabled: boolean): Promise<void> {
+    return await invoke('set_account_disabled', { accountId, disabled });
+}
+
 
 export async function saveAccountExport(accountIds: string[], path: string): Promise<number> {
     return invoke('save_account_export', { accountIds, path });

@@ -190,7 +190,11 @@
     "current": "当前",
     "current_active": "当前选择",
     "disabled": "已禁用",
-    "disabled_tooltip": "账号已停用：授权已失效或被撤销。重新登录后即可恢复。",
+    "disabled_tooltip": "此账号已禁用。重新启用后可切换和刷新；若授权已失效，请重新登录。",
+    "disable_account": "禁用此账号",
+    "enable_account": "启用此账号",
+    "account_disabled_notice": "账号已禁用",
+    "account_enabled_notice": "账号已启用",
     "forbidden": "403",
     "forbidden_msg": "账号无权限，已跳过自动刷新",
     "status": {

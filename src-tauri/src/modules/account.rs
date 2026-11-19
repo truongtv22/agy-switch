@@ -371,6 +371,76 @@ pub(crate) mod tests {
         std::env::remove_var("ABV_DATA_DIR");
     }
 
+    struct DataDirEnv {
+        previous: Option<String>,
+    }
+
+    impl DataDirEnv {
+        fn set(path: &PathBuf) -> Self {
+            let previous = std::env::var("ABV_DATA_DIR").ok();
+            std::env::set_var("ABV_DATA_DIR", path);
+            Self { previous }
+        }
+    }
+
+    impl Drop for DataDirEnv {
+        fn drop(&mut self) {
+            match self.previous.take() {
+                Some(value) => std::env::set_var("ABV_DATA_DIR", value),
+                None => std::env::remove_var("ABV_DATA_DIR"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_set_account_disabled_updates_file_and_index() {
+        let _guard = TEST_MUTEX.lock().unwrap();
+        let dir = TestDataDir::new();
+        let _env = DataDirEnv::set(dir.path());
+        create_account_file(dir.path(), "acc-1", "user1@example.com");
+        let now = chrono::Utc::now().timestamp();
+        save_account_index_in_dir(
+            dir.path(),
+            &AccountIndex {
+                version: "2.0".to_string(),
+                accounts: vec![AccountSummary {
+                    id: "acc-1".to_string(),
+                    email: "user1@example.com".to_string(),
+                    name: None,
+                    disabled: false,
+                    protected_models: HashSet::new(),
+                    created_at: now,
+                    last_used: now,
+                }],
+                current_account_id: Some("acc-1".to_string()),
+                current_target_ide: None,
+                current_ide_account_id: None,
+                current_vscode_account_id: None,
+            },
+        )
+        .unwrap();
+
+        set_account_disabled("acc-1", true).unwrap();
+        let disabled = load_account("acc-1").unwrap();
+        assert!(disabled.disabled);
+        assert_eq!(disabled.disabled_reason.as_deref(), Some(MANUAL_DISABLE_REASON));
+        assert!(disabled.disabled_at.is_some());
+        assert_eq!(disabled.token.refresh_token, "test_refresh_token");
+        assert!(load_account_index().unwrap().accounts[0].disabled);
+
+        let stamped = disabled.disabled_at;
+        set_account_disabled("acc-1", true).unwrap();
+        assert_eq!(load_account("acc-1").unwrap().disabled_at, stamped);
+
+        set_account_disabled("acc-1", false).unwrap();
+        let enabled = load_account("acc-1").unwrap();
+        assert!(!enabled.disabled);
+        assert!(enabled.disabled_reason.is_none());
+        assert!(enabled.disabled_at.is_none());
+        assert!(!load_account_index().unwrap().accounts[0].disabled);
+        assert!(set_account_disabled("missing", true).is_err());
+    }
+
     #[test]
     fn test_backup_created_on_parse_failure() {
         let _guard = TEST_MUTEX.lock().unwrap();
@@ -912,6 +982,38 @@ pub fn upsert_account(
     // Release lock, let add_account handle it
     drop(_lock);
     add_account(email, name, token)
+}
+
+/// Stored when a person disables an account from the app or the terminal.
+pub(crate) const MANUAL_DISABLE_REASON: &str = "Manually disabled";
+
+/// Enable or disable a saved account without changing its credentials or quota.
+/// The account file and the index summary stay in agreement.
+pub fn set_account_disabled(account_id: &str, disabled: bool) -> Result<(), String> {
+    let _write = lock_account_file_updates()?;
+    let mut index = load_account_index()?;
+    if !index.accounts.iter().any(|summary| summary.id == account_id) {
+        return Err(format!("Account ID not found: {}", account_id));
+    }
+    let mut account = load_account(account_id)?;
+    if account.disabled != disabled {
+        account.disabled = disabled;
+        if disabled {
+            account.disabled_at = Some(chrono::Utc::now().timestamp());
+            account.disabled_reason = Some(MANUAL_DISABLE_REASON.to_string());
+        } else {
+            account.disabled_at = None;
+            account.disabled_reason = None;
+        }
+        save_account(&account)?;
+    }
+    if let Some(summary) = index.accounts.iter_mut().find(|summary| summary.id == account_id) {
+        if summary.disabled != account.disabled {
+            summary.disabled = account.disabled;
+            save_account_index(&index)?;
+        }
+    }
+    Ok(())
 }
 
 fn clear_target_selection(index: &mut AccountIndex, id: &str) {

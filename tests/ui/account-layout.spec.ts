@@ -4,8 +4,8 @@ import { setupSettingsFixture } from './settings-fixture';
 for (const language of ['zh', 'en']) for (const view of ['list', 'grid']) {
     test(`account selection and trailing export stay usable in ${view} (${language})`, async ({ page }, info) => {
         const labels = language === 'zh'
-            ? { select: '选择账号 primary@example.invalid', selectPage: '选择本页账号', export: '导出账号', exportSelected: '导出所选 1 个账号', refresh: '刷新 (1)', switch: '切换到此账号' }
-            : { select: 'Select account primary@example.invalid', selectPage: 'Select accounts on this page', export: 'Export account', exportSelected: 'Export 1 selected accounts', refresh: 'Refresh (1)', switch: 'Switch to this account' };
+            ? { select: '选择账号 primary@example.invalid', selectPage: '选择本页账号', export: '导出账号', exportSelected: '导出所选 1 个账号', refresh: '刷新 (1)', switch: '切换到此账号', disable: '禁用此账号 primary@example.invalid', enable: '启用此账号 primary@example.invalid' }
+            : { select: 'Select account primary@example.invalid', selectPage: 'Select accounts on this page', export: 'Export account', exportSelected: 'Export 1 selected accounts', refresh: 'Refresh (1)', switch: 'Switch to this account', disable: 'Disable this account primary@example.invalid', enable: 'Enable this account primary@example.invalid' };
         await page.addInitScript(setupSettingsFixture, { language });
         await page.addInitScript(mode => localStorage.setItem('accounts_view_mode', mode), view);
         await page.goto('/accounts');
@@ -25,6 +25,14 @@ for (const language of ['zh', 'en']) for (const view of ['list', 'grid']) {
             await expect(page.locator('tbody').getByRole('checkbox', { checked: true })).toHaveCount(0);
             await selection.check();
         }
+        const disable = page.getByRole('button', { name: labels.disable, exact: true });
+        await expect(disable).toBeVisible();
+        await disable.click();
+        const enable = page.getByRole('button', { name: labels.enable, exact: true });
+        await expect(enable).toBeVisible();
+        await expect.poll(() => page.evaluate(() => (window as any).__settingsFixture.calls.filter((call: any) => call.command === 'set_account_disabled').map((call: any) => call.args))).toEqual([{ accountId: 'fixture-0', disabled: true }]);
+        await enable.click();
+        await expect(disable).toBeVisible();
         const rowExport = page.getByRole('button', { name: labels.export, exact: true }).first();
         expect(await rowExport.evaluate(button => button.parentElement?.lastElementChild === button)).toBe(true);
         const batchExport = page.getByRole('button', { name: labels.exportSelected, exact: true });
